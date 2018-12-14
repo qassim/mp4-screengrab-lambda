@@ -48,7 +48,7 @@ function readFrameCapture(targetDir, captureFileName) {
 
 async function generateFrameCapture(targetDir, key, captureFileName) {
   try {
-    await exec(`${ffmpegPath} -i ${targetDir}/${key} -ss 00:00:00 -vframes 1 -q:v 20 ${targetDir}/${captureFileName}`);
+    await exec(`${ffmpegPath} -ss 00:00:00 -vframes 1 -q:v 20 -i ${targetDir}/${key} ${targetDir}/${captureFileName}`);
   } catch (error) {
     throw new Error(error);
   }
