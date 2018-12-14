@@ -1,26 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-    sam-app
-    Sample SAM Template for sam-app
-    
-Globals:
-    Function:
-        Timeout: 15
+Description: Lambda for generating thumbnails from MP4 files
 
 Resources:
-    MP4ProcessorFunction:
+    LambdaFunction:
         Type: AWS::Serverless::Function
         Properties:
             CodeUri: .
             Handler: app.handler
             Runtime: nodejs8.10
-
-Outputs:
-    MP4ProcessorFunction:
-      Description: "MP4ProcessorFunction Lambda Function ARN"
-      Value: !GetAtt MP4ProcessorFunction.Arn
-
-    MP4ProcessorFunction:
-      Description: "Implicit IAM Role created for MP4ProcessorFunction"
-      Value: !GetAtt MP4ProcessorFunction.Arn

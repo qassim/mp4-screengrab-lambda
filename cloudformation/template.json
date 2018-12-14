@@ -1,0 +1,236 @@
+{
+  "Description": "Lambda",
+  "Parameters": {
+    "LambdaEnv": {
+      "Description": "Environment this lambda represents",
+      "Type": "String"
+    },
+    "LambdaHandler": {
+      "Default": "app.handler",
+      "Description": "The name of the function (within your source code) that Lambda calls to start running your code.",
+      "Type": "String"
+    },
+    "LambdaMemorySize": {
+      "Description": "The amount of memory, in MB, that is allocated to your Lambda function.",
+      "Type": "Number"
+    },
+    "LambdaTimeout": {
+      "Default": "60",
+      "Description": "The function execution time (in seconds) after which Lambda terminates the function. ",
+      "Type": "Number"
+    },
+    "AlarmEmail": {
+      "Default": "example@example.com",
+      "Description": "Email address to notify if there are any operational issues",
+      "Type": "String"
+    },
+    "BucketName": {
+      "Description": "Bucket to read & write from",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "LambdaFunction": {
+      "Properties": {
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "\n",
+              [
+                "// Will be replaced",
+                "exports.handler = async event => 'Hello, World!'"
+              ]
+            ]
+          }
+        },
+        "Description": "Lambda function to handle retrieval of application data passed by API Gateway",
+        "Environment": {
+          "Variables": {}
+        },
+        "FunctionName": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "LambdaEnv"
+              },
+              "mp4-screengrab-lambda"
+            ]
+          ]
+        },
+        "Handler": {
+          "Ref": "LambdaHandler"
+        },
+        "MemorySize": {
+          "Ref": "LambdaMemorySize"
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaFunctionRole",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs8.10",
+        "Timeout": {
+          "Ref": "LambdaTimeout"
+        }
+      },
+      "Type": "AWS::Lambda::Function"
+    },
+    "LambdaFunctionPolicy": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "s3:GetObject",
+                "s3:PutObject"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:logs:*:*:*",
+                "arn:aws:s3:::mp4.qassim.uk/*"
+              ]
+            }
+          ]
+        },
+        "PolicyName": "LambdaFunctionPolicy",
+        "Roles": [
+          {
+            "Ref": "LambdaFunctionRole"
+          }
+        ]
+      },
+      "Type": "AWS::IAM::Policy"
+    },
+    "LambdaFunctionRole": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "Type": "AWS::IAM::Role"
+    },
+    "LambdaFunctionAlias": {
+      "Properties": {
+        "Description": "Cosmos Alias",
+        "FunctionName": {
+          "Ref": "LambdaFunction"
+        },
+        "FunctionVersion": "$LATEST",
+        "Name": {
+          "Ref": "LambdaEnv"
+        }
+      },
+      "Type": "AWS::Lambda::Alias"
+    },
+    "SupportAlertTopic": {
+      "Properties": {
+        "Subscription": [
+          {
+            "Endpoint": {
+              "Ref": "AlarmEmail"
+            },
+            "Protocol": "email"
+          }
+        ]
+      },
+      "Type": "AWS::SNS::Topic"
+    },
+    "LambdaErrorAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "SupportAlertTopic"
+          }
+        ],
+        "OKActions": [
+          {
+            "Ref": "SupportAlertTopic"
+          }
+        ],
+        "AlarmDescription": "severity=error",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "MetricName": "Errors",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "EvaluationPeriods": 1,
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "LambdaEnv"
+                  },
+                  "mp4-screengrab-lambda"
+                ]
+              ]
+            }
+          }
+        ],
+        "Threshold": 1,
+        "Statistic": "Sum",
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "LambdaHighInvocationsAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmActions": [
+          {
+            "Ref": "SupportAlertTopic"
+          }
+        ],
+        "OKActions": [
+          {
+            "Ref": "SupportAlertTopic"
+          }
+        ],
+        "AlarmDescription": "severity=error",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "MetricName": "Invocations",
+        "Namespace": "AWS/Lambda",
+        "Period": 60,
+        "EvaluationPeriods": 1,
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "LambdaEnv"
+                  },
+                  "mp4-screengrab-lambda"
+                ]
+              ]
+            }
+          }
+        ],
+        "Threshold": 20,
+        "Statistic": "Sum",
+        "TreatMissingData": "notBreaching"
+      }
+    }
+  }
+}
