@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ffmpeg-installer/ffmpeg": "^1.0.16"
+    "@ffmpeg-installer/ffmpeg": "^1.0.17"
   }
 }
